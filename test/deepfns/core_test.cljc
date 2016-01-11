@@ -12,8 +12,6 @@
 ;; 2. associativity/functional composition
 ;; 3. validate all nested types are unchanged
 ;; TODO: type validation on all nested types
-;; TODO: get multiple validation working, tricky because every
-;;  generated element needs to have the same structure but different vals
 (defspec deepfmap-spec
   (prop/for-all [nums (gen/one-of [(gen/set gen/int)
                                    (gen/list gen/int)
@@ -31,3 +29,31 @@
       ;; for now we're just checking the top level type
       (every? #(= (type nums) (type %)) ; 3
         [out-single1 out-single2]))))
+
+;; Here are some test cases for nested type checking (3)
+(deftest deepfmap-types-single
+  (are [expected f args]
+      (is (= expected (deepfmap f args)))
+    nil identity nil
+
+    [2] inc [1]
+
+    #{1 '(2) [3]} inc #{0 '(1) [2]}
+
+    {:a 1 :b 2} inc {:a 0 :b 1}
+
+    {:foo [#{[1]}]} inc {:foo [#{[0]}]}))
+
+;; and to cover the variadic version of deepfmap
+(deftest deepfmap-types-multi
+  (are [expected f arg1 arg2 arg3]
+      (is (= expected (deepfmap f arg1 arg2 arg3)))
+    nil identity nil nil nil
+
+    [[1] [2] [3]] inc [0] [1] [2]
+
+    [#{1 '(2) [3]} #{5 '(6) [7]} #{8 '(9) [10]}]
+    inc #{0 '(1) [2]} #{4 '(5) [6]} #{7 '(8) [9]}
+
+    [{:foo [#{[1]}] :b 2} {:bar[#{[3]}] :k 4} {:bazz [#{[5]}] :z 6}]
+    inc {:foo [#{[0]}] :b 1} {:bar[#{[2]}] :k 3} {:bazz [#{[4]}] :z 5}))
