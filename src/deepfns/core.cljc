@@ -22,9 +22,10 @@
     (when-not (every? nil? matches)
       (vals (remove nil? matches)))))
 
-(defn apply-key [f ms k]
-  [k (apply (partial deepfmap f)
-       (group-vals ms k))])
+(defn apply-key [handler]
+  (fn [f ms k]
+    [k (apply (partial handler f)
+         (group-vals ms k))]))
 
 (defn- fassc
   ([f m]
@@ -36,9 +37,10 @@
      (reduce-kv (fn [acc mk mv]
                   ;; find all the matching keys in mcoll
                   (when-let [keys (into #{} (flatten (map keys mcoll)))]
-                    (into {}
-                      ;; eval the nested maps and bind them to the output
-                      (map (partial apply-key f mcoll) keys))))
+                    (let [apply-key (apply-key deepfmap)]
+                      (into {}
+                        ;; eval the nested maps and bind them to the output
+                        (map (partial apply-key f mcoll) keys)))))
        m m))))
 
 (defn deepfmap
@@ -125,14 +127,16 @@
                   acc))
      m fs))
   ([fs m ms]
-   (let [mcoll (cons m ms)]
+   (let [mcoll (cons m ms)
+         seed (apply merge (reverse mcoll))]
      (reduce-kv (fn [acc fk f]
                   ;; find all the matching keys in mcoll
-                  (when-let [vals (group-vals mcoll fk)]
+                  (if-let [vals (group-vals mcoll fk)]
                     (assoc acc fk
                       ;; eval the nested maps and bind them to the output
-                      (apply (partial deepfapply f) vals))))
-       m fs))))
+                      (apply (partial deepfapply f) vals))
+                    acc))
+       seed fs))))
 
 (defn deepfapply
   "Similar to fapply but recursively evaluates all the arguments"
