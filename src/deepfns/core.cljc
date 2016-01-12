@@ -99,7 +99,9 @@
      (mapcat #(apply map (partial deepfapply %) m ms) fs))))
 
 (defn- group-keys [ms k]
-  (vals (map #(find % k) ms)))
+  (let [matches (map #(find % k) ms)]
+    (when-not (every? nil? matches)
+        (vals matches))))
 
 (defn- assc-fapply
   ([fs m]
@@ -185,7 +187,7 @@
 
 (defn deeppure
   "This is a recursive version of pure. It will replace all values in
-   the given type with val. All keys on maps will be preserved."
+   the given type with value. All keys on maps will also be preserved."
   ([m]
    (fn [value]
      (pure m value)))
@@ -195,3 +197,64 @@
      (coll? m) (coll-pure m value)
      :else
      value)))
+
+
+(declare filterapply)
+
+(defn- assc-filterapply
+  ([fs m]
+   (reduce-kv (fn [acc fk f]
+                (if-let [[_ mv] (find m fk)]
+                  (assoc acc fk (filterapply f mv))
+                  acc))
+     {} fs))
+  ([fs m ms]
+   (let [mcoll (cons m ms)]
+     (reduce-kv (fn [acc fk f]
+                  ;; find all the matching keys in mcoll
+                  (if-let [vals (group-keys mcoll fk)]
+                    (assoc acc fk
+                      ;; eval the nested maps and bind them to the output
+                      (apply (partial filterapply f) vals))
+                    acc))
+       {} fs))))
+
+(defn filterapply
+  "The same as deepfapply but keys not in the applicative will not be
+  propagated."
+  ([f]
+   (fn [m & ms]
+     (if ms
+       (filterapply f m ms)
+       (filterapply f m))))
+  ([fs m]
+   (cond
+     ;; map the fn for sequential/set types
+     (list? fs) (lst-fapply fs m)
+     (seq? fs) (seq-fapply fs m)
+     (vector? fs) (vec-fapply fs m)
+     (set? fs) (set-fapply fs m)
+     ;; match keys for maps and if found apply the fn (otherwise
+     ;;  just leave it)
+     (map? fs) (assc-filterapply fs m)
+     ;; base cases:
+     ;; either use the fn
+     (fn? fs) (fs m)
+     :else
+     ;; or wrap list atoms in a constantly
+     ((constantly fs) m)))
+  ([fs m & ms]
+   (let [mcoll (cons m ms)]
+     (cond
+       ;; mapcat all the results for sequential/set types
+       (list? fs) (lst-fapply fs m ms)
+       (seq? fs) (seq-fapply fs m ms)
+       (vector? fs) (vec-fapply fs m ms)
+       (set? fs) (set-fapply fs m ms)
+       ;; match all keys for maps and apply the fn if ther was a match
+       (map? fs) (assc-filterapply fs m ms)
+       ;; apply the fn to the args
+       (fn? fs) (apply fs mcoll)
+       :else
+       ;; list atoms should be constants
+       (map (constantly fs) mcoll)))))
