@@ -268,3 +268,61 @@
        (fn? fs) (apply fs mcoll)
        :else
        (map (constantly fs) mcoll)))))
+
+
+;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+;;; traverse
+
+(declare traverse)
+
+(defn- eval-entries
+  ([seed fs m]
+   (not-empty
+     (reduce (fn [acc f]
+               (f acc m))
+       seed fs))))
+
+(defn- apply-entries
+  ([seed fs]
+   (fn [m & ms]
+     (if (not-empty ms)
+       (map (partial eval-entries seed fs) (cons m ms))
+       (eval-entries seed fs m)))))
+
+(defn- lst-traverse
+  ([f]
+   (fn [result m]
+     (if-let [v (f m)]
+       (conj result v)
+       result))))
+
+(defn- assc-traverse
+  ([k f]
+   (fn [result m]
+     (if-some [v (f m)]
+       (assoc result k v)
+       result))))
+
+(defn traverse
+  "Takes an applicative and uses that to traverse a datastructure, accumulating
+  the results into the applicative as it goes."
+  ([f]
+   (cond
+     (map? f) (apply-entries {}
+                  (map (fn [[k v]]
+                         (assc-traverse k (traverse v)))
+                    f))
+     (seq? f) (apply-entries '()
+                    (map (comp lst-traverse traverse) f))
+     (vector? f) (apply-entries []
+                      (map (comp lst-traverse traverse) f))
+     (set? f) (apply-entries #{}
+                   (map (comp lst-traverse traverse) f))
+     (fn? f) f
+     (keyword? f) f
+     :else
+     (constantly f))))
+
+(def <=>
+  "An alias for traverse"
+  traverse)
