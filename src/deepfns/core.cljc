@@ -53,7 +53,7 @@
   ([f m]
    (cond
      ;; map deepfmap over all the entries until it thunks out
-     (list? m) (flst f m)
+     (list? m) (reverse (flst f m))
      (vector? m) (fvec f m)
      (seq? m) (fseq f m)
      (set? m) (fset f m)
