@@ -93,20 +93,24 @@ keys in the function map, apply any functions, and build up the results
 in the function map. Here are a few examples:
 
 ```clj
-((traverse [:foo [:bar]]) {:foo 1 :bar 2})
+(traverse [:foo [:bar]] {:foo 1 :bar 2})
 ;; => [1 [2]]
-((traverse {:a :foo}) {:foo 1})
+
+(traverse {:a :foo} {:foo 1})
 ;; => {:a 1}
 
-((traverse {:a :foo}) {:foo 1} {:foo 2})
+(traverse {:a :foo} {:foo 1} {:foo 2})
 ;; => ({:a 1} {:a 2)
-((traverse {:a {:b {:c :foo}}
-            :d :foo})
+
+(traverse {:a {:b {:c :foo}}
+            :d :foo}
  {:foo 1})
 ;; => {:a {:b {:c 1}} :d 1}
-((traverse {:a inc}) 1)
+
+(traverse {:a inc} 1)
 ;; => {:a 2}
-((traverse {:a "some"}) {:a 1})
+
+(traverse {:a "some"} {:a 1})
 ;; => {:a "some"}
 ```
 

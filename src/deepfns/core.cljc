@@ -329,7 +329,11 @@
      (fn? f) f
      (keyword? f) f
      :else
-     (constantly f))))
+     (constantly f)))
+  ([f m]
+   ((traverse f) m))
+  ([f m & ms]
+   (apply (traverse f) (cons m ms))))
 
 (def <=>
   "An alias for traverse"
