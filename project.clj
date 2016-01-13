@@ -1,5 +1,5 @@
 (defproject com.greenyouse/deepfns "0.1.0-SNAPSHOT"
-  :description "Deep functors, applicatives, and more!"
+  :description "Deeply nested fmap, fapply, traverse, and more!"
   :url "https://github.com/greenyouse/deepfns"
   :license {:name "Eclipse Public License"
             :url "http://www.eclipse.org/legal/epl-v10.html"}
