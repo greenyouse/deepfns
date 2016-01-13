@@ -41,6 +41,7 @@ the given value and insert the value into any empty collections:
 ```clj
 (deeppure [1 []] 2)
 ;; => [2 [2]]
+
 (deeppure #{{:a 1}} 2)
 ;; => #{{:a 2}}
 ```
@@ -53,12 +54,16 @@ is that it can operated on nested types and take any number of arguments:
 ```clj
 (deepfapply [inc] [1 2 3])
 ;; => [2 3 4]
+
 (deepfapply [inc dec] [1 2 3])
 ;; => [2 3 4 0 1 2]
+
 (deepfapply #{[+]} #{[1]} #{[2 3]})
 ;; => #{[6]}
+
 (deepfapply [] [1 2 3])
 ;; => []
+
 (deepfapply {:a *} {:a 1} {:a 2 :b 3} {:a 3 :b 4 :c 4})
 ;; => {:a 6 :b 3 :c 4}
 ```
@@ -82,6 +87,7 @@ non-matching keys will not be returned in the result:
 ```clj
 (filterapply {:a +} {:a 1} {:b 2})
 ;; => 1
+
 (filterapply {:a *} {:a 1} {:a 2 :b 3} {:a 3 :b 4 :c 4})
 ;; => {:a 6}
 ```
