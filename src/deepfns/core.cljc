@@ -182,7 +182,7 @@
   deepfapply)
 
 
-(declare pure)
+(declare deeppure)
 
 (defn- coll-pure [t v]
   (into (empty t)
@@ -191,7 +191,7 @@
       (for [branch (map identity t)]
         (if  (not (coll? branch))
           v
-          (pure branch v))))))
+          (deeppure branch v))))))
 
 (defn- map-pure [t v]
   (into (empty t)
@@ -200,7 +200,7 @@
       (map (fn [[k val :as branch]]
              (if-not (coll? branch)
                (into (empty t) [[k v]])
-               (into (empty t) [[k (pure val v)]])))
+               (into (empty t) [[k (deeppure val v)]])))
         t))))
 
 (defn deeppure
@@ -216,6 +216,14 @@
      :else
      value)))
 
+(defn pure
+  ([m]
+   (fn [value]
+     (pure m value)))
+  ([m value]
+   (cond
+     (map? m) (assoc (empty m) nil value)
+     (coll? m) (conj (empty m) value))))
 
 (declare filterapply)
 

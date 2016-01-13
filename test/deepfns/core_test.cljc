@@ -83,3 +83,136 @@
 
     {:foo [#{[1]}] :b 2 :bar [#{[3]}] :k 4 :bazz [#{[5]}] :z 6}
     inc {:foo [#{[0]}] :b 1} {:bar[#{[2]}] :k 3} {:bazz [#{[4]}] :z 5}))
+
+
+;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+;;; fapply
+
+;; TODO: abstract these tests better to cut down on the redundant code
+
+;; assertions:
+;; 1. identity
+;; 2. functional composition
+;; 3. homomorphism
+;; 4. interchange
+
+;; covers the identity law (1)
+(defspec deepfapply-identity
+  (prop/for-all [set-args (gen/set nums {:min-elements 1})
+                 vec-args (gen/vector nums 1 5)
+                 lst-args (gen/not-empty (gen/list nums))
+                 seq-args (gen/not-empty
+                            (gen/fmap (fn [n]
+                                        (seq n))
+                              nums))
+                 map-args (gen/map (gen/return :a) nums {:min-elements 1})]
+    (let [set-out (deepfapply (pure set-args identity) set-args)
+          vec-out (deepfapply (pure vec-args identity) vec-args)
+          lst-out (deepfapply (pure lst-args identity) lst-args)
+          seq-out (deepfapply (pure seq-args identity) seq-args)
+          map-out (deepfapply (pure map-args identity)  map-args)]
+      (and
+        (is (= set-args set-out)) "Set output differs"
+        (is (= vec-args vec-out) "Vector output differs")
+        (is (= lst-args lst-out) "List output differs")
+        (is (= seq-args seq-out) "Seq output differs")
+        (is (= map-args map-out) "Map output differs")))))
+
+(defn build-fn [[m] f]
+  (cond
+    (set? m) #{f}
+    (vector? m) [f]
+    (list? m) (list f)
+    (seq? m) (seq [f])
+    (map? m) {:a f}))
+
+(def gen-coll-ints
+  "Generates a collection of ints for testing"
+  (gen/one-of
+    [(gen/vector (gen/map (gen/return :a) gen/int {:min-elements 1}) 1 5)
+     (gen/vector (gen/vector gen/int 1) 1 5)
+     (gen/vector (gen/fmap list gen/int) 1 5)
+     (gen/vector (gen/set gen/int {:min-elements 1
+                                   :max-elements 1}) 1 5)
+     (gen/vector (gen/fmap (fn [n]
+                             (seq [n])) gen/int)
+       1 5)]))
+
+;; check for functional composition (2)
+;; Just checking top level for now, nested is covered by unit tests
+(defspec deepfapply-composition
+  (prop/for-all [fs (gen/elements [+ *])
+                 arg gen-coll-ints]
+    (let [f1 (build-fn arg (partial fs 5))
+          f2 (build-fn arg (partial fs 10))
+          out1 (->> arg
+                 (apply deepfapply f1)
+                 (deepfapply f2))
+          out2 (->> arg
+                 (apply deepfapply f2)
+                 (deepfapply f1))]
+      (true?
+        (is (= out1 out2)
+          (format "deefapply composition output not equal: out1 - %s, out2 - %s" out1 out2))))))
+
+(defn expected-val [[m :as coll] f]
+  (cond
+    (or (set? m)
+        (vector? m)
+        (list? m)
+        (seq? m)) (conj (empty m) (reduce f (mapcat identity coll)))
+    :else
+    {:a (reduce f (flatten (map vals coll)))}))
+
+;; test for homomorphism (3)
+(defspec deepfapply-homomorphism
+  (prop/for-all [f (gen/elements [* +])
+                 args gen-coll-ints]
+    (let [out (apply deepfapply (build-fn args f) args)
+          expected (expected-val args f)]
+      (true?
+        (is (= out expected)
+          (format "deepfapply homomorphism not equal: op - %s, args - %s" f args))))))
+
+;; TODO: get some coverage variadic interchange
+;; test for interchange (4)
+(defspec deepfapply-interchange
+  (prop/for-all [args gen-coll-ints]
+    (let [x (first args)
+          f (pure (empty x) identity)
+          out1 (deepfapply (pure (empty x) #(% x)) f)
+          out2 (deepfapply f (pure (empty x) x))]
+      (and
+        (is (= out1 out2) "deepfapply interchange not equal")))))
+
+(deftest deepfapply-types-single
+  (are [expected f arg]
+      (is (= expected (deepfapply f arg)))
+    [nil] [identity] [nil]
+
+    #{[1] [2] [3]} #{[inc]} #{[0] [1] [2]}
+
+    {:a 2 :b 2} {:a inc :b identity} {:a 1 :b 2}
+
+    '({:a 2 :b 2} {:a 4 :b 4})
+    '({:a inc :b identity}) '({:a 1 :b 2} {:a 3 :b 4})
+
+    [2 3 4 0 1 2] [inc dec] [1 2 3]
+
+    [{:a [2 2] :b 2} {:a [4 4] :b '(4)}]
+    [{:a [inc inc]}] [{:a [1] :b 2} {:a [3] :b '(4)}]))
+
+(deftest deepfapply-types-multi
+  (are [expected f arg1 arg2 arg3]
+      (is (= expected (deepfapply f arg)))
+    [6] [+] [1] [2] [3]
+
+    #{'([6])} #{'([+])} #{'([1])} #{'([2])} #{'([3])}
+
+    #{[12 18]} #{[(partial * 2) (partial * 3)]} #{[1]} #{[2]} #{[3]}
+
+    {:a 6 :b 4}
+    {:a +} {:a 1} {:a 2} {:a 3 :b 4}
+
+    [{:a #{18} :b {:c {:d [28]}}}]
+    [{:a #{1 2}}] [{:a #{3} :b {:c {:d [4 5]}}}] [{:a #{6} :b {:c {:d [7]}}}]))
