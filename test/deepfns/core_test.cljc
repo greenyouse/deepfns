@@ -204,7 +204,7 @@
 
 (deftest deepfapply-types-multi
   (are [expected f arg1 arg2 arg3]
-      (is (= expected (deepfapply f arg)))
+      (is (= expected (deepfapply f arg1 arg2 arg3)))
     [6] [+] [1] [2] [3]
 
     #{'([6])} #{'([+])} #{'([1])} #{'([2])} #{'([3])}
@@ -215,4 +215,5 @@
     {:a +} {:a 1} {:a 2} {:a 3 :b 4}
 
     [{:a #{18} :b {:c {:d [28]}}}]
+    [{:a #{*} :b {:c {:d [*]}}}]
     [{:a #{1 2}}] [{:a #{3} :b {:c {:d [4 5]}}}] [{:a #{6} :b {:c {:d [7]}}}]))

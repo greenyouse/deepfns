@@ -208,7 +208,7 @@
    the given type with value. All keys on maps will also be preserved."
   ([m]
    (fn [value]
-     (pure m value)))
+     (deeppure m value)))
   ([m value]
    (cond
      (map? m) (map-pure m value)
