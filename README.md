@@ -125,7 +125,7 @@ results?
 
 Here are a few things to note for traverse:
 - Using the variadic form will map traverse over the arguments and
-  return a list of the results (see example 2).
+  return a list of the results (see example 3).
 - Using normal Clojure functions instead of keywords will apply the
   function to each argument too (see second to last example).
 - If you use a value that's not a function, it will be wrapped in a
