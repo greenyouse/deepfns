@@ -49,7 +49,7 @@ the given value and insert the value into any empty collections:
 The deepfapply function will act similar to fapply by applying some
 function wrapped in a type to an argument wrapped an identical type and
 return the result wrapped in the same type. The difference in deepfapply
-is that it can operated on nested types and take any number of arguments:
+is that it can operate on nested types and take any number of arguments:
 
 ```clj
 (deepfapply [inc] [1 2 3])
@@ -109,7 +109,7 @@ in the function map. Here are a few examples:
 ;; => ({:a 1} {:a 2)
 
 (traverse {:a {:b {:c :foo}}
-            :d :foo}
+           :d :foo}
  {:foo 1})
 ;; => {:a {:b {:c 1}} :d 1}
 
