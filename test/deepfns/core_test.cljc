@@ -23,7 +23,7 @@
   (prop/for-all [any-single gen/any]
     (let [out-single (deepfmap identity any-single)
           args-multi (map vector (repeat-rand 6 any-single))
-          out-multi (apply (partial deepfmap identity) args-multi)]
+          out-multi (deepfmap identity args-multi)]
       (and
         (is (= any-single out-single)
           (format "Single identity failed for deepfmap: input - %s, output - %s" any-single out-single))
@@ -46,8 +46,8 @@
     (let [args (repeat-rand 6 n)
           f1 (partial f 10)
           f2 (partial f 20)
-          out1 (apply (partial deepfmap (comp f1 f2)) args)
-          out2 (apply (partial deepfmap (comp f2 f1)) args)]
+          out1 (deepfmap (comp f1 f2) args)
+          out2 (deepfmap (comp f2 f1) args)]
       (and
         (is (= out1 out2)
           (format "fc failed for deepfmap"))))))

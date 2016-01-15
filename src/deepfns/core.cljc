@@ -48,7 +48,7 @@
   ([f]
    (fn [m & ms]
      (if ms
-       (deepfmap f m ms)
+       (apply (partial deepfmap f m) ms)
        (deepfmap f m))))
   ([f m]
    (cond
@@ -143,7 +143,7 @@
   ([f]
    (fn [m & ms]
      (if ms
-       (deepfapply f m ms)
+       (apply (partial deepfapply f m) ms)
        (deepfapply f m))))
   ([fs m]
    (cond
@@ -253,7 +253,7 @@
   ([f]
    (fn [m & ms]
      (if ms
-       (filterapply f m ms)
+       (apply (partial filterapply f m) ms)
        (filterapply f m))))
   ([fs m]
    (cond
