@@ -218,6 +218,10 @@
     [{:a #{*} :b {:c {:d [*]}}}]
     [{:a #{1 2}}] [{:a #{3} :b {:c {:d [4 5]}}}] [{:a #{6} :b {:c {:d [7]}}}]))
 
+
+;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+;;; pure + deeppure
+
 (deftest pure-types
   (are [expected coll x]
       (is (= expected (pure coll x)))
@@ -259,6 +263,10 @@
 
     {:a "test" :b ["test" '("test")]}
     {:a 10 :b [1 '()]} "test"))
+
+
+;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+;;; filterapply
 
 (deftest filterapply-types-single
   (are [expected f arg1]
@@ -303,3 +311,30 @@
     {:a 1 :b [1] :c {:d 1} :e 1}
     {:a 2 :b [2] :c {:d 2 :f 2}}
     {:a 3 :b [3] :c {:d 3}}))
+
+;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+;;; traverse
+
+(deftest traverse-types-single
+  (are [expected trav arg]
+      (is (= expected ((traverse trav) arg)))
+    nil nil {:foo "bar"}
+
+    {:foo "bar"} {:foo "bar"} {:fizz "buzz"}
+
+    {:foo {:bar 2} :fizz {:buzz 2}}
+    {:foo {:bar 2} :fizz {:buzz 2}}
+    {:foo "bar"}
+
+    {:foo {:bar 2}} {:foo {:bar inc}} 1
+
+    [1 [2 {:fizz 3}]]
+    [:foo [:bar {:fizz :buzz}]]
+    {:foo 1 :bar 2 :buzz 3}
+
+
+    {:foo {:bar 1} :fizz 2 :buzz [3 "foo"]}
+    {:foo {:bar :1} :fizz :2 :buzz [:3 "foo"]}
+    {:1 1 :2 2 :3 3}
+
+    {"foo" 1} {"foo" :bar} {:bar 1}))
