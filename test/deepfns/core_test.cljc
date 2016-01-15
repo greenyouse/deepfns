@@ -259,3 +259,47 @@
 
     {:a "test" :b ["test" '("test")]}
     {:a 10 :b [1 '()]} "test"))
+
+(deftest filterapply-types-single
+  (are [expected f arg1]
+      (is (= expected (filterapply f arg1)))
+    [nil] [identity] [nil]
+
+    #{[1] [2] [3]} #{[inc]} #{[0] [1] [2]}
+
+    {:a 2 :b 2} {:a inc :b identity} {:a 1 :b 2}
+
+    '({:a 2 :b 2} {:a 4 :b 4})
+    '({:a inc :b identity}) '({:a 1 :b 2} {:a 3 :b 4})
+
+    [2 3 4 0 1 2] [inc dec] [1 2 3]
+
+    [{:a [2 2] :b 2} {:a [4 4] :b '(4)}]
+    [{:a [inc inc]}] [{:a [1] :b 2} {:a [3] :b '(4)}]
+
+    {:a 2} {:a inc} {:a 1 :b 2 :c 3}
+
+    {:a 2 :b [2 0] :c {:d 5}}
+    {:a inc :b [inc dec] :c {:d identity}} {:a 1 :b [1] :c {:d 5}}))
+
+(deftest filterapply-types-multi
+  (are [expected f arg1 arg2 arg3]
+      (is (= expected (filterapply f arg1 arg2 arg3)))
+    [6] [+] [1] [2] [3]
+
+    #{'([6])} #{'([+])} #{'([1])} #{'([2])} #{'([3])}
+
+    #{[12 18]} #{[(partial * 2) (partial * 3)]} #{[1]} #{[2]} #{[3]}
+
+    {:a 6}
+    {:a +} {:a 1} {:a 2} {:a 3 :b 4}
+
+    [{:a #{18} :b {:c {:d [28]}}}]
+    [{:a #{*} :b {:c {:d [*]}}}]
+    [{:a #{1 2}}] [{:a #{3} :b {:c {:d [4 5]}}}] [{:a #{6} :b {:c {:d [7]}}}]
+
+    {:a 6 :b [6 6] :c {:d [1 2 3]}}
+    {:a + :b [+ *] :c {:d vector}}
+    {:a 1 :b [1] :c {:d 1} :e 1}
+    {:a 2 :b [2] :c {:d 2 :f 2}}
+    {:a 3 :b [3] :c {:d 3}}))
