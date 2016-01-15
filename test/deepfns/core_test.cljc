@@ -127,7 +127,7 @@
     (map? m) {:a f}))
 
 (def gen-coll-ints
-  "Generates a collection of ints for testing"
+  "Generates vector of collections of ints for testing"
   (gen/one-of
     [(gen/vector (gen/map (gen/return :a) gen/int {:min-elements 1}) 1 5)
      (gen/vector (gen/vector gen/int 1) 1 5)
@@ -174,7 +174,7 @@
         (is (= out expected)
           (format "deepfapply homomorphism not equal: op - %s, args - %s" f args))))))
 
-;; TODO: get some coverage variadic interchange
+;; TODO: get some coverage for variadic interchange
 ;; test for interchange (4)
 (defspec deepfapply-interchange
   (prop/for-all [args gen-coll-ints]
@@ -217,3 +217,45 @@
     [{:a #{18} :b {:c {:d [28]}}}]
     [{:a #{*} :b {:c {:d [*]}}}]
     [{:a #{1 2}}] [{:a #{3} :b {:c {:d [4 5]}}}] [{:a #{6} :b {:c {:d [7]}}}]))
+
+(deftest pure-types
+  (are [expected coll x]
+      (is (= expected (pure coll x)))
+
+    nil nil nil
+    [nil] [] nil
+    '(nil) '() nil
+    {nil nil} {} nil
+
+    [[1]] [] [1]
+    '("foo") '() "foo"
+    {nil {:a 1}} {} {:a 1}
+
+    [1] [[1]] 1
+    '("foo") '(["bar"]) "foo"
+    {nil '(1)} {"foo" "bar"} '(1)
+    {nil 1} {:a ["foo"]} 1))
+
+(deftest deeppure-types
+  (are [expected coll x]
+      (is (= expected (deeppure coll x)))
+    nil nil nil
+    [nil] [] nil
+    '(nil) '() nil
+    {nil nil} {} nil
+
+    [[1]] [] [1]
+    '("foo") '() "foo"
+    {nil {:a 1}} {} {:a 1}
+
+    [[1]] [[1]] 1
+    '(["foo"]) '(["bar"]) "foo"
+    {"foo" '(1)} {"foo" "bar"} '(1)
+
+    [1 [1] 1] ["foo" [] "bar"] 1
+
+    (list 1 {:b [{nil 1} 1 (list 1)]} 1)
+    (list "foo" {:b [{} "bar" (list "fizz")]} "buzz") 1
+
+    {:a "test" :b ["test" '("test")]}
+    {:a 10 :b [1 '()]} "test"))
