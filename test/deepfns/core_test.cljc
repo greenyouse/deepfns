@@ -312,12 +312,14 @@
     {:a 2 :b [2] :c {:d 2 :f 2}}
     {:a 3 :b [3] :c {:d 3}}))
 
-;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
-;;; traverse
 
-(deftest traverse-types-single
+;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+;;; transitive
+
+;; TODO: Write some laws for transitive behavior
+(deftest transitive-types-single
   (are [expected trav arg]
-      (is (= expected ((traverse trav) arg)))
+      (is (= expected ((transitive trav) arg)))
     nil nil {:foo "bar"}
 
     {:foo "bar"} {:foo "bar"} {:fizz "buzz"}
@@ -331,7 +333,6 @@
     [1 [2 {:fizz 3}]]
     [:foo [:bar {:fizz :buzz}]]
     {:foo 1 :bar 2 :buzz 3}
-
 
     {:foo {:bar 1} :fizz 2 :buzz [3 "foo"]}
     {:foo {:bar :1} :fizz :2 :buzz [:3 "foo"]}

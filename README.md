@@ -92,39 +92,39 @@ non-matching keys will not be returned in the result:
 ;; => {:a 6}
 ```
 
-### traverse
+### transitive
 
-The traverse function is like an inside-out deepfapply. It will match
+The transitive function is like an inside-out deepfapply. It will match
 keys in the function map, apply any functions, and build up the results
 in the function map. Here are a few examples:
 
 ```clj
-(traverse [:foo [:bar]] {:foo 1 :bar 2})
+(transitive [:foo [:bar]] {:foo 1 :bar 2})
 ;; => [1 [2]]
 
-(traverse {:a :foo} {:foo 1})
+(transitive {:a :foo} {:foo 1})
 ;; => {:a 1}
 
-(traverse {:a :foo} {:foo 1} {:foo 2})
+(transitive {:a :foo} {:foo 1} {:foo 2})
 ;; => ({:a 1} {:a 2)
 
-(traverse {:a {:b {:c :foo}}
+(transitive {:a {:b {:c :foo}}
            :d :foo}
  {:foo 1})
 ;; => {:a {:b {:c 1}} :d 1}
 
-(traverse {:a inc} 1)
+(transitive {:a inc} 1)
 ;; => {:a 2}
 
-(traverse {:a "some"} {:a 1})
+(transitive {:a "some"} {:a 1})
 ;; => {:a "some"}
 ```
 
 See how it applies the functions to the arguments and inserts the
 results?
 
-Here are a few things to note for traverse:
-- Using the variadic form will map traverse over the arguments and
+Here are a few things to note for transitive:
+- Using the variadic form will map transitive over the arguments and
   return a list of the results (see example 3).
 - Using normal Clojure functions instead of keywords will apply the
   function to each argument too (see second to last example).

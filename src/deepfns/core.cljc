@@ -279,9 +279,9 @@
 
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
-;;; traverse
+;;; transitive
 
-(declare traverse)
+(declare transitive)
 
 (defn- eval-entries
   ([seed fs m]
@@ -297,44 +297,44 @@
        (map (partial eval-entries seed fs) (cons m ms))
        (eval-entries seed fs m)))))
 
-(defn- lst-traverse
+(defn- lst-transitive
   ([f]
    (fn [result m]
      (if-let [v (f m)]
        (conj result v)
        result))))
 
-(defn- assc-traverse
+(defn- assc-transitive
   ([k f]
    (fn [result m]
      (if-some [v (f m)]
        (assoc result k v)
        result))))
 
-(defn traverse
-  "Takes an applicative and uses that to traverse a datastructure, accumulating
+(defn transitive
+  "Takes an applicative and uses that to walk a datastructure, accumulating
   the results into the applicative as it goes."
   ([f]
    (cond
      (map? f) (apply-entries {}
                   (map (fn [[k v]]
-                         (assc-traverse k (traverse v)))
+                         (assc-transitive k (transitive v)))
                     f))
      (seq? f) (apply-entries '()
-                    (map (comp lst-traverse traverse) f))
+                    (map (comp lst-transitive transitive) f))
      (vector? f) (apply-entries []
-                      (map (comp lst-traverse traverse) f))
+                      (map (comp lst-transitive transitive) f))
      (set? f) (apply-entries #{}
-                   (map (comp lst-traverse traverse) f))
+                   (map (comp lst-transitive transitive) f))
      (fn? f) f
      (keyword? f) f
      :else
      (constantly f)))
   ([f m]
-   ((traverse f) m))
+   ((transitive f) m))
   ([f m & ms]
-   (apply (traverse f) (cons m ms))))
+   (apply (transitive f) (cons m ms))))
 
 (def <=>
-  "An alias for traverse"
-  traverse)
+  "An alias for transitive"
+  transitive)
