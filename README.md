@@ -109,7 +109,7 @@ in the function map. Here are a few examples:
 ;; => ({:a 1} {:a 2)
 
 (transitive {:a {:b {:c :foo}}
-           :d :foo}
+             :d :foo}
  {:foo 1})
 ;; => {:a {:b {:c 1}} :d 1}
 
@@ -130,6 +130,9 @@ Here are a few things to note for transitive:
   function to each argument too (see second to last example).
 - If you use a value that's not a function, it will be wrapped in a
   constantly so it is always returned (see last example).
+
+## Continuous Integration
+[![Build Status](https://travis-ci.org/greenyouse/deepfns.svg?branch=master)](https://travis-ci.org/greenyouse/deepfns)
 
 ## License
 
