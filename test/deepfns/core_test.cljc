@@ -122,11 +122,24 @@
     (seq? m) (seq [f])
     (map? m) {:a f}))
 
+(def gen-vec-coll-ints
+  "Generates a vector of randomly typed collections of ints for testing.
+  Note that all the collections are of the same type."
+  (gen/one-of
+    [(gen/vector (gen/map (gen/return :a) gen/int {:min-elements 1}) 1 5)
+     (gen/vector (gen/vector gen/int 1) 1 5)
+     (gen/vector (gen/fmap list gen/int) 1 5)
+     (gen/vector (gen/set gen/int {:min-elements 1
+                                   :max-elements 1}) 1 5)
+     (gen/vector (gen/fmap (fn [n]
+                             (seq [n])) gen/int)
+       1 5)]))
+
 ;; check for functional composition (2)
 ;; Just checking top level for now, nested is covered by unit tests
 (defspec deepfapply-composition
   (prop/for-all [fs (gen/elements [+ *])
-                 arg (gen/vector gen-coll-ints 1 5)]
+                 arg gen-vec-coll-ints]
     (let [f1 (build-fn arg (partial fs 5))
           f2 (build-fn arg (partial fs 10))
           out1 (->> arg
@@ -151,7 +164,7 @@
 ;; test for homomorphism (3)
 (defspec deepfapply-homomorphism
   (prop/for-all [f (gen/elements [* +])
-                 args (gen/vector gen-coll-ints 1 5)]
+                 args gen-vec-coll-ints]
     (let [out (apply deepfapply (build-fn args f) args)
           expected (expected-val args f)]
       (true?
@@ -161,7 +174,7 @@
 ;; TODO: get some coverage for variadic interchange
 ;; test for interchange (4)
 (defspec deepfapply-interchange
-  (prop/for-all [args (vector gen-coll-ints 1 5)]
+  (prop/for-all [args gen-vec-coll-ints]
     (let [x (first args)
           f (pure (empty x) identity)
           out1 (deepfapply (pure (empty x) #(% x)) f)
