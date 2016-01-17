@@ -96,27 +96,23 @@
 ;; 3. homomorphism
 ;; 4. interchange
 
+(def gen-coll-ints
+  "Generates a randomly typed collection of ints for testing"
+  (gen/one-of
+    [(gen/map (gen/return :a) gen/int {:min-elements 1})
+     (gen/vector gen/int 1)
+     (gen/fmap list gen/int)
+     (gen/set gen/int {:min-elements 1
+                                    :max-elements 1})
+     (gen/fmap (fn [n]
+                 (seq [n])) gen/int)]))
+
 ;; covers the identity law (1)
 (defspec deepfapply-identity
-  (prop/for-all [set-args (gen/set nums {:min-elements 1})
-                 vec-args (gen/vector nums 1 5)
-                 lst-args (gen/not-empty (gen/list nums))
-                 seq-args (gen/not-empty
-                            (gen/fmap (fn [n]
-                                        (seq n))
-                              nums))
-                 map-args (gen/map (gen/return :a) nums {:min-elements 1})]
-    (let [set-out (deepfapply (pure set-args identity) set-args)
-          vec-out (deepfapply (pure vec-args identity) vec-args)
-          lst-out (deepfapply (pure lst-args identity) lst-args)
-          seq-out (deepfapply (pure seq-args identity) seq-args)
-          map-out (deepfapply (pure map-args identity)  map-args)]
+  (prop/for-all [args gen-coll-ints]
+    (let [out (deepfapply (pure args identity) args)]
       (and
-        (is (= set-args set-out)) "Set output differs"
-        (is (= vec-args vec-out) "Vector output differs")
-        (is (= lst-args lst-out) "List output differs")
-        (is (= seq-args seq-out) "Seq output differs")
-        (is (= map-args map-out) "Map output differs")))))
+        (is (= args out))))))
 
 (defn build-fn [[m] f]
   (cond
@@ -126,23 +122,11 @@
     (seq? m) (seq [f])
     (map? m) {:a f}))
 
-(def gen-coll-ints
-  "Generates vector of collections of ints for testing"
-  (gen/one-of
-    [(gen/vector (gen/map (gen/return :a) gen/int {:min-elements 1}) 1 5)
-     (gen/vector (gen/vector gen/int 1) 1 5)
-     (gen/vector (gen/fmap list gen/int) 1 5)
-     (gen/vector (gen/set gen/int {:min-elements 1
-                                   :max-elements 1}) 1 5)
-     (gen/vector (gen/fmap (fn [n]
-                             (seq [n])) gen/int)
-       1 5)]))
-
 ;; check for functional composition (2)
 ;; Just checking top level for now, nested is covered by unit tests
 (defspec deepfapply-composition
   (prop/for-all [fs (gen/elements [+ *])
-                 arg gen-coll-ints]
+                 arg (gen/vector gen-coll-ints 1 5)]
     (let [f1 (build-fn arg (partial fs 5))
           f2 (build-fn arg (partial fs 10))
           out1 (->> arg
@@ -167,7 +151,7 @@
 ;; test for homomorphism (3)
 (defspec deepfapply-homomorphism
   (prop/for-all [f (gen/elements [* +])
-                 args gen-coll-ints]
+                 args (gen/vector gen-coll-ints 1 5)]
     (let [out (apply deepfapply (build-fn args f) args)
           expected (expected-val args f)]
       (true?
@@ -177,7 +161,7 @@
 ;; TODO: get some coverage for variadic interchange
 ;; test for interchange (4)
 (defspec deepfapply-interchange
-  (prop/for-all [args gen-coll-ints]
+  (prop/for-all [args (vector gen-coll-ints 1 5)]
     (let [x (first args)
           f (pure (empty x) identity)
           out1 (deepfapply (pure (empty x) #(% x)) f)
