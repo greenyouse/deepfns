@@ -1,5 +1,4 @@
-(ns deepfns.core
-  (:require [deepfns.utils :as u]))
+(ns deepfns.core)
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 ;;; fmap
