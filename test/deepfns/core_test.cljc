@@ -1,6 +1,6 @@
 (ns deepfns.core-test
   (:require #?@(:clj [[clojure.test :refer :all]]
-                :cljs [[cljs.test :as test :refer [test-var] :refer-macros [is]]])
+                :cljs [[cljs.test :as test :refer [test-var] :refer-macros [is deftest]]])
             [clojure.test.check.generators :as gen]
             [clojure.test.check.properties :as prop #?@(:cljs [:include-macros true])]
             [clojure.test.check.clojure-test #?@(:clj [:refer [defspec]]
