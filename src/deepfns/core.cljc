@@ -53,12 +53,12 @@
   ([f m]
    (cond
      ;; map deepfmap over all the entries until it thunks out
-     (list? m) (reverse (flst f m))
-     (vector? m) (fvec f m)
-     (seq? m) (fseq f m)
-     (set? m) (fset f m)
+     (list? m) (with-meta (reverse (flst f m)) (meta m))
+     (vector? m) (with-meta (fvec f m) (meta m))
+     (seq? m) (with-meta (fseq f m) (meta m))
+     (set? m) (with-meta (fset f m) (meta m))
      ;; map deepfmap over all the vals (nested too)
-     (associative? m) (fassc f m)
+     (associative? m) (with-meta (fassc f m) (meta m))
      ;; two base cases here:
      ;; compose fns
      (fn? m) (comp f m)
@@ -69,11 +69,11 @@
    ;; same thing here but we'll mutually walk ms
    (let [mcoll (cons m ms)]
      (cond
-       (list? m) (map (partial flst f) mcoll)
-       (vector? m) (map (partial fvec f) mcoll)
-       (seq? m) (map (partial fseq f) mcoll)
-       (set? m) (map (partial fset f) mcoll)
-       (associative? m) (fassc f m ms)
+       (list? m) (with-meta (map (partial flst f) mcoll) (meta m))
+       (vector? m) (with-meta (map (partial fvec f) mcoll) (meta m))
+       (seq? m) (with-meta (map (partial fseq f) mcoll) (meta m))
+       (set? m) (with-meta (map (partial fset f) mcoll) (meta m))
+       (associative? m) (with-meta (fassc f m ms) (meta m))
        (fn? m) (map #(comp f %) mcoll)
        :else
        (apply f mcoll)))))
@@ -148,13 +148,13 @@
   ([fs m]
    (cond
      ;; map the fn for sequential/set types
-     (list? fs) (lst-fapply fs m)
-     (seq? fs) (seq-fapply fs m)
-     (vector? fs) (vec-fapply fs m)
-     (set? fs) (set-fapply fs m)
+     (list? fs) (with-meta (lst-fapply fs m) (meta m))
+     (seq? fs) (with-meta (seq-fapply fs m) (meta m))
+     (vector? fs) (with-meta (vec-fapply fs m) (meta m))
+     (set? fs) (with-meta (set-fapply fs m) (meta m))
      ;; match keys for maps and if found apply the fn (otherwise
      ;;  just leave it)
-     (map? fs) (assc-fapply fs m)
+     (map? fs) (with-meta (assc-fapply fs m) (meta m))
      ;; base cases:
      ;; either use the fn
      (fn? fs) (fs m)
@@ -165,12 +165,12 @@
    (let [mcoll (cons m ms)]
      (cond
        ;; mapcat all the results for sequential/set types
-       (list? fs) (lst-fapply fs m ms)
-       (seq? fs) (seq-fapply fs m ms)
-       (vector? fs) (vec-fapply fs m ms)
-       (set? fs) (set-fapply fs m ms)
+       (list? fs) (with-meta (lst-fapply fs m ms) (meta m))
+       (seq? fs) (with-meta (seq-fapply fs m ms) (meta m))
+       (vector? fs) (with-meta (vec-fapply fs m ms) (meta m))
+       (set? fs) (with-meta (set-fapply fs m ms) (meta m))
        ;; match all keys for maps and apply the fn if ther was a match
-       (map? fs) (assc-fapply fs m ms)
+       (map? fs) (with-meta (assc-fapply fs m ms) (meta m))
        ;; apply the fn to the args
        (fn? fs) (apply fs mcoll)
        :else
@@ -258,22 +258,22 @@
        (filterapply f m))))
   ([fs m]
    (cond
-     (list? fs) (lst-fapply fs m)
-     (seq? fs) (seq-fapply fs m)
-     (vector? fs) (vec-fapply fs m)
-     (set? fs) (set-fapply fs m)
-     (map? fs) (assc-filterapply fs m)
+     (list? fs) (with-meta (lst-fapply fs m) (meta m))
+     (seq? fs) (with-meta (seq-fapply fs m) (meta m))
+     (vector? fs) (with-meta (vec-fapply fs m) (meta m))
+     (set? fs) (with-meta (set-fapply fs m) (meta m))
+     (map? fs) (with-meta (assc-filterapply fs m) (meta m))
      (fn? fs) (fs m)
      :else
      ((constantly fs) m)))
   ([fs m & ms]
    (let [mcoll (cons m ms)]
      (cond
-       (list? fs) (lst-fapply fs m ms)
-       (seq? fs) (seq-fapply fs m ms)
-       (vector? fs) (vec-fapply fs m ms)
-       (set? fs) (set-fapply fs m ms)
-       (map? fs) (assc-filterapply fs m ms)
+       (list? fs) (with-meta (lst-fapply fs m ms) (meta m))
+       (seq? fs) (with-meta (seq-fapply fs m ms) (meta m))
+       (vector? fs) (with-meta (vec-fapply fs m ms) (meta m))
+       (set? fs) (with-meta (set-fapply fs m ms) (meta m))
+       (map? fs) (with-meta (assc-filterapply fs m ms) (meta m))
        (fn? fs) (apply fs mcoll)
        :else
        (map (constantly fs) mcoll)))))
@@ -311,20 +311,20 @@
    (repeat x))
   ([fs x]
    (cond
-     (vector? fs) (vec-zip fs x)
-     (seq? fs) (reverse (vec-zip fs x))
-     (map? fs) (map-zip fs x)))
+     (vector? fs) (with-meta (vec-zip fs x) (meta x))
+     (seq? fs) (with-meta (reverse (vec-zip fs x)) (meta x))
+     (map? fs) (with-meta (map-zip fs x) (meta x))))
   ([fs x y]
    (cond
-     (vector? fs) (vec-zip fs x [y])
-     (seq? fs) (reverse (vec-zip fs x [y]))
-     (map? fs) (map-zip fs x y)))
+     (vector? fs) (with-meta (vec-zip fs x [y]) (meta x))
+     (seq? fs) (with-meta (reverse (vec-zip fs x [y])) (meta x))
+     (map? fs) (with-meta (map-zip fs x y) (meta x))))
   ([fs x y & args]
    (let [more-args (cons y args)]
      (cond
-       (vector? fs) (vec-zip fs x more-args)
-       (seq? fs) (reverse (vec-zip fs x more-args))
-       (map? fs) (apply (partial map-zip fs x y) args)))))
+       (vector? fs) (with-meta (vec-zip fs x more-args) (meta x))
+       (seq? fs) (with-meta (reverse (vec-zip fs x more-args)) (meta x))
+       (map? fs) (with-meta (apply (partial map-zip fs x y) args) (meta x))))))
 
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
