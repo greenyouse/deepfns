@@ -86,7 +86,7 @@ non-matching keys will not be returned in the result:
 
 ```clj
 (filterapply {:a +} {:a 1} {:b 2})
-;; => 1
+;; => {:a 1}
 
 (filterapply {:a *} {:a 1} {:a 2 :b 3} {:a 3 :b 4 :c 4})
 ;; => {:a 6}
