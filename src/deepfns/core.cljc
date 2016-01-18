@@ -1,4 +1,5 @@
-(ns deepfns.core)
+(ns deepfns.core
+  (:require [deepfns.utils :as u]))
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 ;;; fmap
@@ -140,11 +141,11 @@
 
 (defn deepfapply
   "Similar to fapply but recursively evaluates all the arguments"
-  ([f]
+  ([fs]
    (fn [m & ms]
      (if ms
-       (apply (partial deepfapply f m) ms)
-       (deepfapply f m))))
+       (apply (partial deepfapply fs m) ms)
+       (deepfapply fs m))))
   ([fs m]
    (cond
      ;; map the fn for sequential/set types
@@ -225,6 +226,7 @@
      (map? m) (assoc (empty m) nil value)
      (coll? m) (conj (empty m) value))))
 
+
 (declare filterapply)
 
 (defn- assc-filterapply
@@ -276,6 +278,54 @@
        (fn? fs) (apply fs mcoll)
        :else
        (map (constantly fs) mcoll)))))
+
+
+(declare zip)
+
+(defn- vec-zip
+  ([fs m]
+   (into (empty m) (map deepfmap (eval (vec fs)) m)))
+  ([fs m args]
+   (into (empty m) (apply (partial map deepfmap (eval (vec fs)) m) args))))
+
+(letfn [(init-map [fs args]
+         (into {}
+           (map (partial filter #(not (contains? fs (key %))))
+             args)))]
+  (defn- map-zip [fs & args]
+    (reduce-kv (fn [acc k v]
+                 (if (fn? v)
+                   (assoc acc k (apply (partial deepfmap v)
+                                  (remove nil? (map k args))))
+                   (assoc acc k (apply (partial zip v)
+                                  (remove nil? (map k args))))))
+      (init-map fs args) fs)))
+
+(defn zip
+  "Similar to zip-list but it handles nested data and maps too. Each
+  function in the fs collection will be applied to the argument at
+  that position (vectors + seqs) or the matching key (maps). The
+  1-arity version will return an infinite seq of the item.
+
+  NOTE: This is not compatible with sets, only lists, seqs, and maps."
+  ([x]
+   (repeat x))
+  ([fs x]
+   (cond
+     (vector? fs) (vec-zip fs x)
+     (seq? fs) (reverse (vec-zip fs x))
+     (map? fs) (map-zip fs x)))
+  ([fs x y]
+   (cond
+     (vector? fs) (vec-zip fs x [y])
+     (seq? fs) (reverse (vec-zip fs x [y]))
+     (map? fs) (map-zip fs x y)))
+  ([fs x y & args]
+   (let [more-args (cons y args)]
+     (cond
+       (vector? fs) (vec-zip fs x more-args)
+       (seq? fs) (reverse (vec-zip fs x more-args))
+       (map? fs) (apply (partial map-zip fs x y) args)))))
 
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;

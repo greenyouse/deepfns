@@ -103,7 +103,7 @@
      (gen/vector gen/int 1)
      (gen/fmap list gen/int)
      (gen/set gen/int {:min-elements 1
-                                    :max-elements 1})
+                       :max-elements 1})
      (gen/fmap (fn [n]
                  (seq [n])) gen/int)]))
 
@@ -311,10 +311,50 @@
 
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+;;; zip
+
+;; TODO: wrap up generative tests for zip too (test coll type consistency
+;; + value types)
+(deftest zip-2
+  (are [expected fs arg1 arg2]
+    (is (= expected (zip fs arg1 arg2)))
+    nil + nil nil
+
+    [2] [+] [1] [1 2]
+
+    '(2 4) '(+ +) '(2 2) '(0 2)
+
+    '(1 10) '(* -) '(1 10) '(1 0)
+
+    {:a 1 :b 2 :c 5} {:a + :b -} {:a 0 :b 3} {:a 1 :b 1 :c 5}
+
+    {:a {:b 2}
+     :c 0}
+    {:a inc} {:a {:b 1}} {:c 0}))
+
+(deftest zip-3
+  (are [expected fs arg1 arg2 arg3]
+      (is (= expected (zip fs arg1 arg2 arg3)))
+    nil + nil nil nil
+
+    [3] [+] [1] [1] [1 2]
+
+    '(3 6) '(+ *) '(1 1) '(1 2) '(1 3)
+
+    {:a 3 :b 4 :c 10} {:a * :b +} {:a 1} {:a 3 :b 3} {:b 1 :c 10}
+
+    {:a {:b 10} :c 1 :d {:e 1}}
+    {:a {:b +}}
+    {:a {:b 5}}
+    {:a {:b 1}}
+    {:a {:b 4} :c 1 :d {:e 1}}))
+
+
+;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 ;;; transitive
 
 ;; TODO: Write some laws for transitive behavior
-(deftest transitive-types-single
+(deftest transitive-types
   (are [expected trav arg]
       (is (= expected ((transitive trav) arg)))
     nil nil {:foo "bar"}
