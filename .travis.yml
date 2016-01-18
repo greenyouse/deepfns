@@ -5,4 +5,4 @@ before_install:
   - lein2 with-profile +travis install
 before_script:
   - lein2 version
-script: lein2 test
+script: lein2 with-profile dev test
