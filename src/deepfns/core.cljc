@@ -1,4 +1,5 @@
-(ns deepfns.core)
+(ns deepfns.core
+  (:require [deepfns.utils :as u]))
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 ;;; fmap
@@ -53,12 +54,12 @@
   ([f m]
    (cond
      ;; map deepfmap over all the entries until it thunks out
-     (list? m) (with-meta (reverse (flst f m)) (meta m))
-     (vector? m) (with-meta (fvec f m) (meta m))
-     (seq? m) (with-meta (fseq f m) (meta m))
-     (set? m) (with-meta (fset f m) (meta m))
+     (list? m) (u/save-meta (reverse (flst f m)) m)
+     (vector? m) (u/save-meta (fvec f m) m)
+     (seq? m) (u/save-meta (fseq f m) m)
+     (set? m) (u/save-meta (fset f m) m)
      ;; map deepfmap over all the vals (nested too)
-     (associative? m) (with-meta (fassc f m) (meta m))
+     (associative? m) (u/save-meta (fassc f m) m)
      ;; two base cases here:
      ;; compose fns
      (fn? m) (comp f m)
@@ -69,11 +70,11 @@
    ;; same thing here but we'll mutually walk ms
    (let [mcoll (cons m ms)]
      (cond
-       (list? m) (with-meta (map (partial flst f) mcoll) (meta m))
-       (vector? m) (with-meta (map (partial fvec f) mcoll) (meta m))
-       (seq? m) (with-meta (map (partial fseq f) mcoll) (meta m))
-       (set? m) (with-meta (map (partial fset f) mcoll) (meta m))
-       (associative? m) (with-meta (fassc f m ms) (meta m))
+       (list? m) (u/save-metas (map (partial flst f) mcoll) mcoll)
+       (vector? m) (u/save-metas (map (partial fvec f) mcoll) mcoll)
+       (seq? m) (u/save-metas (map (partial fseq f) mcoll) mcoll)
+       (set? m) (u/save-metas (map (partial fset f) mcoll) mcoll)
+       (associative? m) (u/save-metas (fassc f m ms) mcoll)
        (fn? m) (map #(comp f %) mcoll)
        :else
        (apply f mcoll)))))
@@ -148,13 +149,13 @@
   ([fs m]
    (cond
      ;; map the fn for sequential/set types
-     (list? fs) (with-meta (lst-fapply fs m) (meta m))
-     (seq? fs) (with-meta (seq-fapply fs m) (meta m))
-     (vector? fs) (with-meta (vec-fapply fs m) (meta m))
-     (set? fs) (with-meta (set-fapply fs m) (meta m))
+     (list? fs) (u/save-meta (lst-fapply fs m) m)
+     (seq? fs) (u/save-meta (seq-fapply fs m) m)
+     (vector? fs) (u/save-meta (vec-fapply fs m) m)
+     (set? fs) (u/save-meta (set-fapply fs m) m)
      ;; match keys for maps and if found apply the fn (otherwise
      ;;  just leave it)
-     (map? fs) (with-meta (assc-fapply fs m) (meta m))
+     (map? fs) (u/save-meta (assc-fapply fs m) m)
      ;; base cases:
      ;; either use the fn
      (fn? fs) (fs m)
@@ -165,12 +166,12 @@
    (let [mcoll (cons m ms)]
      (cond
        ;; mapcat all the results for sequential/set types
-       (list? fs) (with-meta (lst-fapply fs m ms) (meta m))
-       (seq? fs) (with-meta (seq-fapply fs m ms) (meta m))
-       (vector? fs) (with-meta (vec-fapply fs m ms) (meta m))
-       (set? fs) (with-meta (set-fapply fs m ms) (meta m))
+       (list? fs) (u/save-metas (lst-fapply fs m ms) mcoll)
+       (seq? fs) (u/save-metas (seq-fapply fs m ms) mcoll)
+       (vector? fs) (u/save-metas (vec-fapply fs m ms) mcoll)
+       (set? fs) (u/save-metas (set-fapply fs m ms) mcoll)
        ;; match all keys for maps and apply the fn if ther was a match
-       (map? fs) (with-meta (assc-fapply fs m ms) (meta m))
+       (map? fs) (u/save-metas (assc-fapply fs m ms) mcoll)
        ;; apply the fn to the args
        (fn? fs) (apply fs mcoll)
        :else
@@ -250,7 +251,9 @@
 
 (defn filterapply
   "The same as deepfapply but keys not in the applicative will not be
-  propagated."
+  propagated.
+
+  NOTE: saves all metadata even if a collection gets filtered"
   ([f]
    (fn [m & ms]
      (if ms
@@ -258,22 +261,22 @@
        (filterapply f m))))
   ([fs m]
    (cond
-     (list? fs) (with-meta (lst-fapply fs m) (meta m))
-     (seq? fs) (with-meta (seq-fapply fs m) (meta m))
-     (vector? fs) (with-meta (vec-fapply fs m) (meta m))
-     (set? fs) (with-meta (set-fapply fs m) (meta m))
-     (map? fs) (with-meta (assc-filterapply fs m) (meta m))
+     (list? fs) (u/save-meta (lst-fapply fs m) m)
+     (seq? fs) (u/save-meta (seq-fapply fs m) m)
+     (vector? fs) (u/save-meta (vec-fapply fs m) m)
+     (set? fs) (u/save-meta (set-fapply fs m) m)
+     (map? fs) (u/save-meta (assc-filterapply fs m) m)
      (fn? fs) (fs m)
      :else
      ((constantly fs) m)))
   ([fs m & ms]
    (let [mcoll (cons m ms)]
      (cond
-       (list? fs) (with-meta (lst-fapply fs m ms) (meta m))
-       (seq? fs) (with-meta (seq-fapply fs m ms) (meta m))
-       (vector? fs) (with-meta (vec-fapply fs m ms) (meta m))
-       (set? fs) (with-meta (set-fapply fs m ms) (meta m))
-       (map? fs) (with-meta (assc-filterapply fs m ms) (meta m))
+       (list? fs) (u/save-metas (lst-fapply fs m ms) mcoll)
+       (seq? fs) (u/save-metas (seq-fapply fs m ms) mcoll)
+       (vector? fs) (u/save-metas (vec-fapply fs m ms) mcoll)
+       (set? fs) (u/save-metas (set-fapply fs m ms) mcoll)
+       (map? fs) (u/save-metas (assc-filterapply fs m ms) mcoll)
        (fn? fs) (apply fs mcoll)
        :else
        (map (constantly fs) mcoll)))))
@@ -311,20 +314,24 @@
    (repeat x))
   ([fs x]
    (cond
-     (vector? fs) (with-meta (vec-zip fs x) (meta x))
-     (seq? fs) (with-meta (reverse (vec-zip fs x)) (meta x))
-     (map? fs) (with-meta (map-zip fs x) (meta x))))
+     (vector? fs) (u/save-meta (vec-zip fs x) x)
+     (seq? fs) (u/save-meta (reverse (vec-zip fs x)) x)
+     (map? fs) (u/save-meta (map-zip fs x) x)))
   ([fs x y]
    (cond
-     (vector? fs) (with-meta (vec-zip fs x [y]) (meta x))
-     (seq? fs) (with-meta (reverse (vec-zip fs x [y])) (meta x))
-     (map? fs) (with-meta (map-zip fs x y) (meta x))))
+     (vector? fs) (u/save-metas (vec-zip fs x [y]) [x y])
+     (seq? fs) (u/save-metas (reverse (vec-zip fs x [y])) [x y])
+     (map? fs) (u/save-metas (map-zip fs x y) [x y])))
   ([fs x y & args]
-   (let [more-args (cons y args)]
+   (let [more-args (cons y args)
+         all-args (cons x (cons y args))]
      (cond
-       (vector? fs) (with-meta (vec-zip fs x more-args) (meta x))
-       (seq? fs) (with-meta (reverse (vec-zip fs x more-args)) (meta x))
-       (map? fs) (with-meta (apply (partial map-zip fs x y) args) (meta x))))))
+       (vector? fs) (-> (vec-zip fs x more-args)
+                        (u/save-metas all-args))
+       (seq? fs) (-> (reverse (vec-zip fs x more-args))
+                     (u/save-metas all-args))
+       (map? fs) (-> (apply (partial map-zip fs x y) args)
+                     (u/save-metas all-args))))))
 
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
