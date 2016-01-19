@@ -20,6 +20,7 @@
 
 ;; I know eq is usually for checking memory equality... I just like
 ;; having => for threading and this seemed like a good second choice
+;; I'd take suggestions for a new name too
 (defn eq>
   "A transative form of = where both arguments are transitive
   expressions"
@@ -78,22 +79,24 @@
   "A transitive form of reduce where exprs are collections of transitive
   expressions. Here's an example:
 
-  ((reduce> + [:foo :foo :bar] [:foo]) {:foo 1})
+  ((reduce1> + [:foo :foo :bar] [:foo]) {:foo 1})
 
   => 3"
   ([f & exprs]
    (let [ts (to-transitive exprs)]
      (fn [m]
-       (->> (trans-vals ts m)
-            (reduce f))))))
+       (let [xs (trans-vals ts m)]
+         (when (not (empty? xs))
+           (reduce f xs)))))))
 
 (defn reduce2>
   "A transitive form of reduce that uses an initial seed value."
   ([f seed & exprs]
    (let [ts (to-transitive exprs)]
      (fn [m]
-       (->> (trans-vals ts m)
-            (reduce f seed))))))
+       (let [xs (trans-vals ts m)]
+         (when (not (empty? xs))
+           (reduce f seed xs)))))))
 
 (defn filter>
   "A transitive form of filter where exprs are collections of transitive
@@ -101,5 +104,6 @@
   [pred & exprs]
   (let [ts (to-transitive exprs)]
     (fn [m]
-      (->> (trans-vals ts m)
-           (filter pred)))))
+      (let [xs (trans-vals ts m)]
+        (when (not (empty? xs))
+          (filter pred xs))))))
