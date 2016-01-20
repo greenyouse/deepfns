@@ -8,4 +8,8 @@
 
   :profiles {:dev {:dependencies
                    [[org.clojure/test.check "0.9.0"]
-                    [criterium "0.4.3"]]}})
+                    [criterium "0.4.3"]]
+                   :plugins
+                   [[lein-codox "0.9.1"]]}}
+  :codox {:source-uri "https://github.com/greenyouse/deepfns/blob/master/{version}/{filepath}#L{line}"
+          :include [deepfns.core deepfns.transitive deepfns.utils]})
