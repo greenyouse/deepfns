@@ -23,7 +23,7 @@
     (when-not (every? nil? matches)
       (vals (remove nil? matches)))))
 
-(defn apply-key [handler]
+(defn- apply-key [handler]
   (fn [f ms k]
     [k (apply (partial handler f)
          (group-vals ms k))]))
