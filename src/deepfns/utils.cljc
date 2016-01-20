@@ -1,4 +1,5 @@
-(ns deepfns.utils)
+(ns deepfns.utils
+  "Internal, helper functions not meant for consumption")
 
 (defn save-meta
   "Save metadata for an object"

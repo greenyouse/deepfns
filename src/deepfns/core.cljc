@@ -1,4 +1,5 @@
 (ns deepfns.core
+  "General, category theory functions plus a few new ones."
   (:require [deepfns.utils :as u]))
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
@@ -45,7 +46,18 @@
        m m))))
 
 (defn deepfmap
-  "Like fmap but it will recursively evalute all nested collections"
+  "Like fmap but it will recursively evalute all nested collections.
+
+  If you're not already familiar, fmap is basically like map but it
+  guarantees that the type of the collection that's passed in as an
+  argument will remain unchanged when it comes out as a result.
+
+  See this Haskell page for more info:
+  https://en.wikibooks.org/wiki/Haskell/The_Functor_class
+
+  (deepfmap inc {:a 1 :b {:c 2}})
+
+  => {:a 2 :b {:c 3}}"
   ([f]
    (fn [m & ms]
      (if ms
@@ -140,7 +152,19 @@
        seed fs))))
 
 (defn deepfapply
-  "Similar to fapply but recursively evaluates all the arguments"
+  "Similar to fapply but recursively evaluates all the arguments.
+
+  This basically applies a function that's wrapped in the same type
+  as the arguments and returns a collection of the same type.
+
+  See this Haskell page for more info:
+  https://en.wikibooks.org/wiki/Haskell/Applicative_Functors#Application_in_functors
+
+  ex:
+  (deepfapply {:a +}
+    {:a 1} {:a 1 :b 2})
+
+  => {:a 2 :b 2}"
   ([fs]
    (fn [m & ms]
      (if ms
@@ -206,7 +230,11 @@
 
 (defn deeppure
   "This is a recursive version of pure. It will replace all values in
-   the given type with value. All keys on maps will also be preserved."
+   the given type with value. All keys on maps will also be preserved.
+
+  (deeppure [1 []] 10)
+
+  => [10 [10]]"
   ([m]
    (fn [value]
      (deeppure m value)))
@@ -218,6 +246,15 @@
      value)))
 
 (defn pure
+  "Basically pure will take any collection and insert some value into it.
+
+  See this for more info:
+  https://en.wikibooks.org/wiki/Haskell/Applicative_Functors#The_Applicative_class
+
+  ex:
+  (pure [1] 10)
+
+  => [10]"
   ([m]
    (fn [value]
      (pure m value)))
@@ -252,6 +289,11 @@
 (defn filterapply
   "The same as deepfapply but keys not in the applicative will not be
   propagated.
+
+  (filterapply {:a +}
+    {:a 1} {:a 1 :b 2})
+
+  => {:a 2}
 
   NOTE: saves all metadata even if a collection gets filtered"
   ([f]
@@ -308,6 +350,19 @@
   function in the fs collection will be applied to the argument at
   that position (vectors + seqs) or the matching key (maps). The
   1-arity version will return an infinite seq of the item.
+
+  Here is more info on zip-list:
+  https://en.wikibooks.org/wiki/Haskell/Applicative_Functors#ZipList
+
+  ex:
+  (zip [+ -] [1 2 3] [4 5] [6 1])
+
+  => [11 -4]
+
+   (zip {:a inc :b dec}
+     {:a 1 :b {:c 2 :d 3}})
+
+  => {:a 2 :b {:c 1 :d 2}}
 
   NOTE: This is not compatible with sets, only lists, seqs, and maps."
   ([x]
@@ -368,8 +423,14 @@
        result))))
 
 (defn transitive
-  "Takes an applicative and uses that to walk a datastructure, accumulating
-  the results into the applicative as it goes."
+  "Takes a transitive and uses that to walk a datastructure, accumulating
+  the results into the applicative as it goes.
+
+  ex:
+  ((transitive {:a :foo :b {:c :bar}})
+    {:foo 1 :bar 2 :fizz 3})
+
+  => {:a 1 :b {:c 2}}"
   ([f]
    (cond
      (map? f) (apply-entries {}

@@ -2,6 +2,8 @@
 
 A Clojure library for deeply nested data transformations!
 
+Full documentation for the library can be found [here](http://greenyouse.github.io/deepfns/index.html).
+
 ### fmap
 
 Basically it updates the values inside of data structures while
@@ -130,6 +132,9 @@ Here are a few things to note for transitive:
   function to each argument too (see second to last example).
 - If you use a value that's not a function, it will be wrapped in a
   constantly so it is always returned (see last example).
+  
+There are also transitive functions in `deepfns.transitive` that
+help with various types of data transformations!
 
 ## Continuous Integration
 [![Build Status](https://travis-ci.org/greenyouse/deepfns.svg?branch=master)](https://travis-ci.org/greenyouse/deepfns)
