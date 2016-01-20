@@ -13,6 +13,10 @@ Latest Leiningen version:
 
 Full documentation for the library can be found [here](http://greenyouse.github.io/deepfns/index.html).
 
+If you'd like some examples of how to use each function, check the cases
+in the test directory. Here's a basic overview of the main functions:
+
+
 ### fmap
 
 Basically it updates the values inside of data structures while
