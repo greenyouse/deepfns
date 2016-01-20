@@ -2,6 +2,8 @@
 
 A Clojure library for deeply nested data transformations!
 
+[![Clojars Project](https://img.shields.io/clojars/v/com.greenyouse/deepfns.svg)](https://clojars.org/com.greenyouse/deepfns)
+
 Full documentation for the library can be found [here](http://greenyouse.github.io/deepfns/index.html).
 
 ### fmap
