@@ -105,10 +105,15 @@
   ([fs m]
    (apply list
      ;; converts to fs to symbols
-     (mapcat #(map (partial deepfapply (eval %)) m) fs)))
+     ;; FIXME: When fs is a list, the list cannot be quoted.
+     ;; there's no eval in cljs so whatever functions are in a
+     ;; quoted list will stay symbols (hard to work around this)
+     (mapcat #(map (partial deepfapply #?(:clj (eval %)
+                                          :cljs %)) m) fs)))
   ([fs m ms]
     (apply list
-      (mapcat #(apply map (partial deepfapply (eval %)) m ms) fs))))
+      (mapcat #(apply map (partial deepfapply #?(:clj (eval %)
+                                                 :cljs %)) m ms) fs))))
 
 (defn- seq-fapply
   ([fs m]
@@ -328,9 +333,11 @@
 
 (defn- vec-zip
   ([fs m]
-   (into (empty m) (map deepfmap (eval (vec fs)) m)))
+   (into (empty m) (map deepfmap #?(:clj (eval (vec fs))
+                                    :cljs fs) m)))
   ([fs m args]
-   (into (empty m) (apply (partial map deepfmap (eval (vec fs)) m) args))))
+   (into (empty m) (apply (partial map deepfmap #?(:clj (eval (vec fs))
+                                                   :cljs fs) m) args))))
 
 (letfn [(init-map [fs args]
          (into {}
