@@ -93,6 +93,10 @@ talking about:
   earlier argument takes precedence (see `:b` in the last example).
 - Using an empty collection as the function will always return an empty
   collection.
+  
+One issue to be aware of is that in ClojureScript the lists for
+applicatives will need to be of the form `(list 1 2 3)` instead of the
+normal `'(1 2 3)` format.
 
 ### filterapply
 
