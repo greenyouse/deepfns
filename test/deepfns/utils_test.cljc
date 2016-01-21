@@ -1,7 +1,7 @@
 (ns deepfns.utils-test
   (:require #?@(:clj [[clojure.test :refer :all]]
-                :cljs [[cljs.test :as test :refer [test-var] :refer-macros [is deftest]]])
-            [deepfns.utils :refer :all]))
+                :cljs [[cljs.test :as test :refer [test-var] :refer-macros [are is deftest]]])
+            [deepfns.utils :refer [save-meta save-metas]]))
 
 (deftest save-meta-roundtrip
   (are [expected arg]

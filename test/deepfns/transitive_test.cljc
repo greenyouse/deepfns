@@ -1,8 +1,9 @@
 (ns deepfns.transitive-test
   (:require #?@(:clj [[clojure.test :refer :all]]
                 :cljs [[cljs.test :as test :refer [test-var]
-                        :refer-macros [is deftest]]])
-            [deepfns.transitive :refer :all]))
+                        :refer-macros [are is deftest]]])
+            [deepfns.transitive :refer [=> eq> p> if> when> map>
+                                        reduce1> reduce2> filter>]]))
 
 (deftest =>-test
   (are [expected fs m]

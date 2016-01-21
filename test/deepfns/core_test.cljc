@@ -1,11 +1,13 @@
 (ns deepfns.core-test
   (:require #?@(:clj [[clojure.test :refer :all]]
-                :cljs [[cljs.test :as test :refer [test-var] :refer-macros [is deftest]]])
-            [clojure.test.check.generators :as gen]
-            [clojure.test.check.properties :as prop #?@(:cljs [:include-macros true])]
+                :cljs [[cljs.test :as test :refer [test-var] :refer-macros [are is deftest]]])
+            #?@(:cljs [[clojure.test.check :refer [quick-check]]])
             [clojure.test.check.clojure-test #?@(:clj [:refer [defspec]]
                                                  :cljs [:refer-macros [defspec]])]
-            [deepfns.core :refer :all]))
+            [clojure.test.check.generators :as gen]
+            [clojure.test.check.properties :as prop #?@(:cljs [:include-macros true])]
+            [deepfns.core :refer [deepfmap deepfapply filterapply pure
+                                  deeppure zip transitive]]))
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 ;;; fmap
@@ -26,9 +28,9 @@
           out-multi (deepfmap identity args-multi)]
       (and
         (is (= any-single out-single)
-          (format "Single identity failed for deepfmap: input - %s, output - %s" any-single out-single))
+          (str "Single identity failed for deepfmap: input -" any-single", output - " out-single))
         (is (= args-multi out-multi)
-          (format "Variadic identity failed for deepfmap: input - %s, output - %s" args-multi out-multi))))))
+          (str "Variadic identity failed for deepfmap: input - " args-multi ", output - " out-multi))))))
 
 (def nums
   "Generates some arbitrarily nested datastructure full of ints"
@@ -50,7 +52,7 @@
           out2 (deepfmap (comp f2 f1) args)]
       (and
         (is (= out1 out2)
-          (format "fc failed for deepfmap"))))))
+          (str "fc failed for deepfmap"))))))
 
 ;; Here are some test cases for nested type checking (3)
 (deftest deepfmap-types-single
@@ -150,7 +152,7 @@
                  (deepfapply f1))]
       (true?
         (is (= out1 out2)
-          (format "deefapply composition output not equal: out1 - %s, out2 - %s" out1 out2))))))
+          (str "deefapply composition output not equal: out1 - " out1 ", out2 - " out2))))))
 
 (defn expected-val [[m :as coll] f]
   (cond
@@ -169,7 +171,7 @@
           expected (expected-val args f)]
       (true?
         (is (= out expected)
-          (format "deepfapply homomorphism not equal: op - %s, args - %s" f args))))))
+          (str "deepfapply homomorphism not equal: op - " f ", args - " args))))))
 
 ;; TODO: get some coverage for variadic interchange
 ;; test for interchange (4)
