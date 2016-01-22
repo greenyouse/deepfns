@@ -125,7 +125,7 @@ in the function map. Here are a few examples:
 ;; => {:a 1}
 
 (transitive {:a :foo} {:foo 1} {:foo 2})
-;; => ({:a 1} {:a 2)
+;; => ({:a 1} {:a 2})
 
 (transitive {:a {:b {:c :foo}}
              :d :foo}
