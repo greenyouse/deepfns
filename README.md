@@ -13,6 +13,9 @@ Latest Leiningen version:
 
 Full documentation for the library can be found [here](http://greenyouse.github.io/deepfns/index.html).
 
+I also wrote an introductory blog post focusing on transitives and the
+current state of the library [here](https://edbabcock.com/deepfns.html).
+
 If you'd like some examples of how to use each function, check the cases
 in the test directory. Here's a basic overview of the main functions:
 
