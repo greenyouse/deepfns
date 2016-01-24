@@ -99,118 +99,131 @@
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 ;;; fapply + pure + filterapply
 
-(declare deepfapply)
+(defn- ss-fapply
+  "An fapply helper fn for sequential/set types. It uses a handler fn
+  fn-name as a callback for evaluating the nested data."
+  [fn-name]
+  (fn
+    ([t fs m]
+     (-> (apply t (mapcat #(map (partial fn-name %) m) fs))
+       (u/save-meta m)))
+    ([t fs m ms mcoll]
+     (->  (apply t (mapcat #(apply map (partial fn-name %) m ms) fs))
+       (u/save-metas mcoll)))))
 
-(defn- fapply-lst
-  ([fs m]
-   (apply list
-     ;; converts to fs to symbols
-     ;; FIXME: When fs is a list, the list cannot be quoted.
-     ;; there's no eval in cljs so whatever functions are in a
-     ;; quoted list will stay symbols (hard to work around this)
-     (mapcat #(map (partial deepfapply #?(:clj (eval %)
-                                          :cljs %)) m) fs)))
-  ([fs m ms]
-    (apply list
-      (mapcat #(apply map (partial deepfapply #?(:clj (eval %)
-                                                 :cljs %)) m ms) fs))))
-
-(defn- fapply-seq
-  ([fs m]
-   (mapcat #(map (partial deepfapply %) m) fs))
-  ([fs m ms]
-   (mapcat #(apply map (partial deepfapply %) m ms) fs)))
-
-(defn- fapply-set
-  ([fs m]
-   (set
-     (mapcat #(map (partial deepfapply %) m) fs)))
-  ([fs m ms]
-   (set
-     (mapcat #(apply map (partial deepfapply %) m ms) fs))))
-
-(defn- fapply-vec
-  ([fs m]
-   (apply vector
-     (mapcat #(map (partial deepfapply %) m) fs)))
-  ([fs m ms]
-   (apply vector
-     (mapcat #(apply map (partial deepfapply %) m ms) fs))))
-
-(defn- fapply-map
-  ([fs m]
-   (reduce-kv (fn [acc fk f]
-                (if-let [[_ mv] (find m fk)]
-                  (assoc acc fk (deepfapply f mv))
-                  acc))
-     m fs))
-  ([fs m ms]
-   (let [mcoll (cons m ms)
-         seed (apply merge (reverse mcoll))]
+(defn- map-fapply
+  "Similar to ss-fapply, this is a helper fn for the map type. It also uses
+  fn-name as a callback fn to recurse with. The seed variable is for what
+  the applicative will reduce into. With deepfapply we'll want to save all
+  values but with filterapply it will get rid of values by using an empty
+  map as the seed."
+  [fn-name seed]
+  (fn
+    ([fs m]
      (reduce-kv (fn [acc fk f]
-                  ;; find all the matching keys in mcoll
-                  (if-let [vals (group-vals mcoll fk)]
-                    (assoc acc fk
-                      ;; eval the nested maps and bind them to the output
-                      (apply (partial deepfapply f) vals))
+                  (if-let [[_ mv] (find m fk)]
+                    (assoc acc fk (fn-name f mv))
                     acc))
-       seed fs))))
+       (or seed m) fs))
+    ([fs m ms]
+     (let [mcoll (cons m ms)
+           full-seed (apply merge (reverse mcoll))]
+       (reduce-kv (fn [acc fk f]
+                    ;; find all the matching keys in mcoll
+                    (if-let [vals (group-vals mcoll fk)]
+                      (assoc acc fk
+                        ;; eval the nested maps and bind them to the output
+                        (apply (partial fn-name f) vals))
+                      acc))
+         (or seed full-seed) fs)))))
 
+(defn- fapply-handler [fn-name ss-handler map-handler]
+  (fn
+    ([fs]
+     (fn [m & ms]
+       (if ms
+         (apply (partial fn-name fs m) ms)
+         (fn-name fs m))))
+    ([fs m]
+     (cond
+       ;; map the fn for sequential/set (ss) types
+       ;; symbols in quoted lists can be evaluated in clj but not cljs
+       (list? fs) (ss-handler list #?(:clj (map eval fs)
+                                      :cljs fs)
+                    m)
+       (seq? fs) (ss-handler #(identity %&) fs m)
+       (vector? fs) (ss-handler vector fs m)
+       (set? fs) (ss-handler #(set %&) fs m)
+       ;; match keys for maps and if found apply the fn (otherwise
+       ;;  just leave it)
+       (map? fs) (u/save-meta (map-handler fs m) m)
+       ;; base cases:
+       ;; either use the fn
+       (fn? fs) (fs m)
+       :else
+       ;; or wrap list atoms in a constantly
+       ((constantly fs) m)))
+    ([fs m & ms]
+     (let [mcoll (cons m ms)]
+       (cond
+         ;; mapcat all the results for sequential/set types
+         (list? fs) (ss-handler list #?(:clj (map eval fs)
+                                        :cljs fs)
+                      m ms mcoll)
+         (seq? fs) (ss-handler #(identity %&) fs m ms mcoll)
+         (vector? fs) (ss-handler vector fs m ms mcoll)
+         (set? fs) (ss-handler #(set %&) fs m ms mcoll)
+         ;; match all keys for maps and apply the fn if ther was a match
+         (map? fs) (u/save-metas (map-handler fs m ms) mcoll)
+         ;; apply the fn to the args
+         (fn? fs) (apply fs mcoll)
+         :else
+         ;; list atoms should be constants
+         (map (constantly fs) mcoll))))))
+
+
+;; FIXME: When fs is a list, the list cannot be quoted.
+;; there's no eval in cljs so whatever functions are in a
+;; quoted list will stay symbols (hard to work around this)
 (defn deepfapply
   "Similar to fapply but recursively evaluates all the arguments.
 
-  This basically applies a function that's wrapped in the same type
-  as the arguments and returns a collection of the same type.
+   This basically applies a function that's wrapped in the same type
+   as the arguments and returns a collection of the that type.
 
-  See this Haskell page for more info:
-  https://en.wikibooks.org/wiki/Haskell/Applicative_Functors#Application_in_functors
+   See this Haskell page for more info:
+   https://en.wikibooks.org/wiki/Haskell/Applicative_Functors#Application_in_functors
 
-  ex:
-  (deepfapply {:a +}
-    {:a 1} {:a 1 :b 2})
+   ex:
+   (deepfapply {:a +}
+     {:a 1} {:a 1 :b 2})
 
-  => {:a 2 :b 2}"
-  ([fs]
-   (fn [m & ms]
-     (if ms
-       (apply (partial deepfapply fs m) ms)
-       (deepfapply fs m))))
-  ([fs m]
-   (cond
-     ;; map the fn for sequential/set types
-     (list? fs) (u/save-meta (fapply-lst fs m) m)
-     (seq? fs) (u/save-meta (fapply-seq fs m) m)
-     (vector? fs) (u/save-meta (fapply-vec fs m) m)
-     (set? fs) (u/save-meta (fapply-set fs m) m)
-     ;; match keys for maps and if found apply the fn (otherwise
-     ;;  just leave it)
-     (map? fs) (u/save-meta (fapply-map fs m) m)
-     ;; base cases:
-     ;; either use the fn
-     (fn? fs) (fs m)
-     :else
-     ;; or wrap list atoms in a constantly
-     ((constantly fs) m)))
-  ([fs m & ms]
-   (let [mcoll (cons m ms)]
-     (cond
-       ;; mapcat all the results for sequential/set types
-       (list? fs) (u/save-metas (fapply-lst fs m ms) mcoll)
-       (seq? fs) (u/save-metas (fapply-seq fs m ms) mcoll)
-       (vector? fs) (u/save-metas (fapply-vec fs m ms) mcoll)
-       (set? fs) (u/save-metas (fapply-set fs m ms) mcoll)
-       ;; match all keys for maps and apply the fn if ther was a match
-       (map? fs) (u/save-metas (fapply-map fs m ms) mcoll)
-       ;; apply the fn to the args
-       (fn? fs) (apply fs mcoll)
-       :else
-       ;; list atoms should be constants
-       (map (constantly fs) mcoll)))))
+   => {:a 2 :b 2}"
+  [& args]
+  (let [seq-fapply (ss-fapply deepfapply)
+        map-fapply (map-fapply deepfapply nil)
+        fapply (fapply-handler deepfapply  seq-fapply map-fapply)]
+    (apply fapply args)))
 
 (def <-*>
   "An alias for deepfapply"
   deepfapply)
 
+(defn filterapply
+  "The same as deepfapply but keys not in the applicative will not be
+   propagated.
+
+  (filterapply {:a +}
+    {:a 1} {:a 1 :b 2})
+
+  => {:a 2}
+
+  NOTE: saves all metadata even if a collection gets filtered"
+  [& args]
+  (let [seq-fapply (ss-fapply filterapply)
+        map-fapply (map-fapply filterapply {})
+        fapply (fapply-handler filterapply seq-fapply map-fapply)]
+    (apply fapply args)))
 
 (declare deeppure)
 
@@ -267,66 +280,6 @@
    (cond
      (map? m) (assoc (empty m) nil value)
      (coll? m) (conj (empty m) value))))
-
-
-(declare filterapply)
-
-(defn- filterapply-map
-  ([fs m]
-   (reduce-kv (fn [acc fk f]
-                (if-let [[_ mv] (find m fk)]
-                  (assoc acc fk (filterapply f mv))
-                  acc))
-     ;; start with an empty map to filter vals not in applicative
-     {} fs))
-  ([fs m ms]
-   (let [mcoll (cons m ms)]
-     (reduce-kv (fn [acc fk f]
-                  ;; find all the matching keys in mcoll
-                  (if-let [vals (group-vals mcoll fk)]
-                    (assoc acc fk
-                      ;; eval the nested maps and bind them to the output
-                      (apply (partial filterapply f) vals))
-                    acc))
-       ;; use the empty map here too
-       {} fs))))
-
-(defn filterapply
-  "The same as deepfapply but keys not in the applicative will not be
-  propagated.
-
-  (filterapply {:a +}
-    {:a 1} {:a 1 :b 2})
-
-  => {:a 2}
-
-  NOTE: saves all metadata even if a collection gets filtered"
-  ([f]
-   (fn [m & ms]
-     (if ms
-       (apply (partial filterapply f m) ms)
-       (filterapply f m))))
-  ([fs m]
-   (cond
-     (list? fs) (u/save-meta (fapply-lst fs m) m)
-     (seq? fs) (u/save-meta (fapply-seq fs m) m)
-     (vector? fs) (u/save-meta (fapply-vec fs m) m)
-     (set? fs) (u/save-meta (fapply-set fs m) m)
-     (map? fs) (u/save-meta (filterapply-map fs m) m)
-     (fn? fs) (fs m)
-     :else
-     ((constantly fs) m)))
-  ([fs m & ms]
-   (let [mcoll (cons m ms)]
-     (cond
-       (list? fs) (u/save-metas (fapply-lst fs m ms) mcoll)
-       (seq? fs) (u/save-metas (fapply-seq fs m ms) mcoll)
-       (vector? fs) (u/save-metas (fapply-vec fs m ms) mcoll)
-       (set? fs) (u/save-metas (fapply-set fs m ms) mcoll)
-       (map? fs) (u/save-metas (filterapply-map fs m ms) mcoll)
-       (fn? fs) (apply fs mcoll)
-       :else
-       (map (constantly fs) mcoll)))))
 
 
 (declare zip)
