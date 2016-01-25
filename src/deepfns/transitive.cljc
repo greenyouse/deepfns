@@ -44,10 +44,10 @@
   "A transative form of = where both arguments are transitive
   expressions"
   [x-expr y-expr]
-  (let [x-t (d/<=> x-expr m)
-        y-t (d/<=> y-expr m)]
+  (let [x-t (d/<=> x-expr)
+        y-t (d/<=> y-expr)]
     (fn [m]
-      (= x-t y-t))))
+      (= (x-t m) (y-t m)))))
 
 (defn if>
   "Like if but for transitives. Takes a predicate and returns the then
