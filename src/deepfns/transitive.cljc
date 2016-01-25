@@ -18,6 +18,25 @@
   "An alias for clojure.core/partial"
   partial)
 
+(defn or>
+  "A transitive form of or where ts is any number of transitives."
+  [& ts]
+  (fn [m]
+    (reduce (fn [_ t]
+              (when-some [matched-t (d/<=> t m)]
+                (reduced matched-t)))
+      {} ts)))
+
+(defn default>
+  "Similar to or>, it takes some transitives ts and returns
+  the first matching one. If none are found then it returns
+  the default value."
+  [default & ts]
+  (fn [m]
+    (if-some [or-found ((apply or> ts) m)]
+      or-found
+      default)))
+
 ;; I know eq is usually for checking memory equality... I just like
 ;; having => for threading and this seemed like a good second choice
 ;; I'd take suggestions for a new name too
