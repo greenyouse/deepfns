@@ -3,6 +3,7 @@
                 :cljs [[cljs.test :as test :refer [test-var]
                         :refer-macros [are is deftest]]])
             [deepfns.transitive :refer [=> eq> p> if> when> map>
+                                        or> default>
                                         reduce1> reduce2> filter>]]))
 
 (deftest =>-test
@@ -17,6 +18,29 @@
     2 [:foo inc] {:foo 1}
 
     "fizz" [:foo :bar] {:foo {:bar "fizz" :fizz 1} :buzz 2}))
+
+(deftest or>-test
+  (are [expected arg1 arg2 m]
+      (is (= expected ((or> arg1 arg2) m)))
+    nil nil nil {}
+
+    nil {:a :b} {:c :d} {:foo :bar}
+
+    {:a :bar} {:a :foo} {:c :foo} {:foo :bar}
+
+    {:c :bar} {:a :b} {:c :foo} {:foo :bar}))
+
+(deftest default>-test
+  (let [default "1"]
+    (are [expected arg1 arg2 m]
+        (is (= expected ((default> default arg1 arg2) m)))
+      "1" nil nil {}
+
+      "1" {:a :b} {:c :d} {:foo :bar}
+
+      {:a :bar} {:a :foo} {:c :foo} {:foo :bar}
+
+      {:c :bar} {:a :b} {:c :foo} {:foo :bar})))
 
 (deftest eq>-test
   (are [expected expr1 expr2 m]
