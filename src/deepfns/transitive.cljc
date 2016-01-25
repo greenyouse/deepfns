@@ -44,38 +44,38 @@
   "A transative form of = where both arguments are transitive
   expressions"
   [x-expr y-expr]
-  (let [x-t (d/<=> x-expr)
-        y-t (d/<=> y-expr)]
+  (let [x-t (d/<=> x-expr m)
+        y-t (d/<=> y-expr m)]
     (fn [m]
-      (= (x-t m) (y-t m)))))
+      (= x-t y-t))))
 
 (defn if>
   "Like if but for transitives. Takes a predicate and returns the then
   or else clause."
   ([pred then]
    (fn [m]
-     (let [pred-t (d/<=> pred)
-           then-t (d/<=> then)]
-       (if (pred-t m)
-         (then-t m)))))
+     (let [pred-t (d/<=> pred m)
+           then-t (d/<=> then m)]
+       (if pred-t
+         then-t))))
   ([pred then else]
    (fn [m]
-     (let [pred-t (d/<=> pred)
-           then-t (d/<=> then)
-           else-t (d/<=> else)]
-       (if (pred-t m)
-         (then-t m)
-         (else-t m))))))
+     (let [pred-t (d/<=> pred m)
+           then-t (d/<=> then m)
+           else-t (d/<=> else m)]
+       (if pred-t
+         then-t
+         else-t)))))
 
 (defn when>
   "A transitive form of when. Takes a predicate and returns the
   transitive clause when successful."
   [pred then]
   (fn [m]
-    (let [pred-t (d/<=> pred)
-          then-t (d/<=> then)]
-      (when (pred-t m)
-        (then-t m)))))
+    (let [pred-t (d/<=> pred m)
+          then-t (d/<=> then m)]
+      (when pred-t
+        then-t))))
 
 (defn- to-transitive [exprs]
   (map d/<=> exprs))
