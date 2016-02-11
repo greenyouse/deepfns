@@ -1,4 +1,4 @@
-(defproject com.greenyouse/deepfns "0.1.2"
+(defproject com.greenyouse/deepfns "0.1.3-Snapshot"
   :description "Deeply nested fmap, fapply, and more!"
   :url "https://github.com/greenyouse/deepfns"
   :license {:name "Eclipse Public License"
@@ -19,7 +19,8 @@
   :cljsbuild {:builds {:test {:source-paths ["src" "test"]
                               :notify-command ["phantomjs"
                                                "phantom/unit-test.js"
-                                               "phantom/unit-test.html"]          :compiler {:output-to "target/cljs/test.js"
+                                               "phantom/unit-test.html"]
+                              :compiler {:output-to "target/cljs/test.js"
                                          :optimizations :whitespace
                                          :pretty-print true}}}
               :test-commands {"unit-test" ["phantomjs"

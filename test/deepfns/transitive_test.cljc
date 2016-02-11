@@ -3,7 +3,7 @@
                 :cljs [[cljs.test :as test :refer [test-var]
                         :refer-macros [are is deftest]]])
             [deepfns.transitive :refer [=> eq> p> if> when> map>
-                                        or> default>
+                                        or> default> str> format>
                                         reduce1> reduce2> filter>]]))
 
 (deftest =>-test
@@ -17,7 +17,13 @@
 
     2 [:foo inc] {:foo 1}
 
-    "fizz" [:foo :bar] {:foo {:bar "fizz" :fizz 1} :buzz 2}))
+    "fizz" [:foo :bar] {:foo {:bar "fizz" :fizz 1} :buzz 2}
+
+    "foobar" [[:foo :bar] str] {:foo "foo" :bar "bar"}
+
+    'fizzbuzz [[:fizz :buzz] str symbol] {:fizz "fizz":buzz "buzz"}
+
+    ["foo"] [[:foo :bar]] {:foo "foo" :bizz "bar"}))
 
 (deftest or>-test
   (are [expected arg1 arg2 m]
@@ -54,6 +60,30 @@
       true {:foo :bar} {:foo :bar} {:bar 1}
 
       true [:foo :bar] [:bar] {:bar 1}))
+
+(deftest str>-test
+  (are [expected k1 k2 m]
+      (is (= expected ((str> k1 k2) m)))
+    "" nil nil {}
+
+    "foobar" :foo :bar {:foo "foo" :bar "bar"}
+
+    "12" :foo :bar {:foo 1 :bar 2}
+
+    "foo" :foo :buzz {:foo "foo" :bar "bar"}))
+
+(deftest format>-test
+  (are [expected s k1 k2 m]
+      (is (= expected ((format> s k1 k2) m)))
+    "" "" nil nil {}
+
+    "foobar" "%s%s" :foo :bar {:foo "foo" :bar "bar"}
+
+    "one1two2" "one%dtwo%d" :1 :2 {:1 1 :2 2}
+
+    "no  input " "no %s input %s" :a :b {:c "foo" :d "bar"}
+
+    "foo" "%s%s" :foo :buzz {:foo "foo" :bar "bar"}))
 
 (deftest if>-test
   (are [expected pred then else m]
