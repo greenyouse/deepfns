@@ -1,7 +1,8 @@
 (ns deepfns.transitive
   "Functions that combine with transitives for more powerful data
   transformations"
-  (:require [deepfns.core :as d]))
+  (:require [clojure.string :as s]
+            [deepfns.core :as d]))
 
 (defn =>
   "Like the threading macro, some->, this threads data through successive
@@ -58,21 +59,14 @@
     (fn [m]
       (= (x-t m) (y-t m)))))
 
-(defn str>
-  "A transitive version of str that can take transitive keywords
-  and strings to compose a larger string."
-  [& ks]
-  (=> ks str))
-
-
 (defn- nil-string [& coll]
   "Convert any nil values to empty strings"
   (map #(if (nil? %) "" %) coll))
 
 (defn format>
   "A transitive that formats a string with transitive keyword
-  arguments. Be sure that you pass it the proper number of
-  arguments, it will not give proper output otherwise.
+  arguments. Any unmatched transitive keywords will be converted
+  to empty strings.
 
   example:
   ((format> \"%s.%s\" :one :two)
@@ -80,9 +74,23 @@
 
   => \"foo.bar\""
   [s & ks]
+  {:pre [(not-empty ks)]}
   (=> ks
-      nil-string
-      (partial apply format s)))
+    nil-string
+    (partial apply format s)))
+
+(defn str>
+  "A transitive version of str that can take transitive keywords
+  and strings to compose a larger string."
+  [& ks]
+  (let [formatter (reduce #(if (string? %2)
+                             (str % %2)
+                             (str % "%s"))
+                    "" ks)
+        keywords (filter keyword? ks)]
+    (if (empty? keywords)
+      (constantly (s/join "" ks))
+      (apply format> formatter keywords))))
 
 (defn if>
   "Like if but for transitives. Takes a predicate and returns the then
