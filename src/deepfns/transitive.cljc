@@ -2,7 +2,9 @@
   "Functions that combine with transitives for more powerful data
   transformations"
   (:require [clojure.string :as s]
-            [deepfns.core :as d]))
+            [deepfns.core :as d]
+            #?(:clj [deepfns.utils :refer [binary-op]])
+            #?(:cljs [deepfns.utils :refer-macros [binary-op]])))
 
 (defn =>
   "Like the threading macro, some->, this threads data through successive
@@ -47,17 +49,12 @@
       or-found
       default)))
 
-;; I know eq is usually for checking memory equality... I just like
-;; having => for threading and this seemed like a good second choice
-;; I'd take suggestions for a new name too
-(defn eq>
-  "A transative form of = where both arguments are transitive
-  expressions"
-  [x-expr y-expr]
-  (let [x-t (d/<=> x-expr)
-        y-t (d/<=> y-expr)]
-    (fn [m]
-      (= (x-t m) (y-t m)))))
+(binary-op eq> =)
+(binary-op not-eq> not=)
+(binary-op gt> >)
+(binary-op lt> <)
+(binary-op gte> >=)
+(binary-op lte> <=)
 
 (defn- nil-string [& coll]
   "Convert any nil values to empty strings"
