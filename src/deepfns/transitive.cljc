@@ -60,8 +60,9 @@
   "Convert any nil values to empty strings"
   (map #(if (nil? %) "" %) coll))
 
-(defn format>
-  "A transitive that formats a string with transitive keyword
+#?(:clj
+   (defn format>
+     "A transitive that formats a string with transitive keyword
   arguments. Any unmatched transitive keywords will be converted
   to empty strings.
 
@@ -70,11 +71,11 @@
    {:one \"foo\" :two \"bar\"})
 
   => \"foo.bar\""
-  [s & ks]
-  {:pre [(not-empty ks)]}
-  (=> ks
-    nil-string
-    (partial apply format s)))
+     [s & ks]
+     {:pre [(not-empty ks)]}
+     (=> ks
+       nil-string
+       (partial apply format s))))
 
 (defn str>
   "A transitive version of str that can take transitive keywords
