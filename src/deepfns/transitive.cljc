@@ -30,6 +30,18 @@
   "An alias for clojure.core/partial"
   partial)
 
+(defn and>
+  "A transitive form of and where ts is any number of transitives. Outputs all
+  the nested values when successful."
+  [& ts]
+  (fn [m]
+    (reduce (fn [_ t]
+              (let [out (d/<=> t m)]
+                (if out
+                  out
+                  (reduced out))))
+      {} ts)))
+
 (defn or>
   "A transitive form of or where ts is any number of transitives."
   [& ts]
@@ -167,3 +179,13 @@
       (let [xs (trans-vals ts m)]
         (when (not (empty? xs))
           (filter pred xs))))))
+
+(defn es>
+  "Escapes expressions from being evaluated by a transitive
+
+  ((<=> {:foo (es> [:bar :baz])
+   {:bar 10})
+
+  => {:foo [:bar :baz]}"
+  [& exprs]
+  (apply constantly exprs))
