@@ -397,8 +397,7 @@
                   (map (fn [[k v]]
                          (transitive-map k (transitive v)))
                     f))
-     (seq? f) (apply-entries '()
-                    (map (comp transitive-lst transitive) f))
+     (seq? f) (apply-entries '() (map (comp transitive-lst transitive) (reverse f)))
      (vector? f) (apply-entries []
                       (map (comp transitive-lst transitive) f))
      (set? f) (apply-entries #{}

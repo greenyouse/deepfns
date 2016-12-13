@@ -378,6 +378,10 @@
     [:foo [:bar {:fizz :buzz}]]
     {:foo 1 :bar 2 :buzz 3}
 
+    [:foo  2 [:bar {:fizz :baz}]]
+    {:foo 1 :bar 3}
+    {:foo 1 :bar 2 :buzz 3}
+
     {:foo {:bar 1} :fizz 2 :buzz [3 "foo"]}
     {:foo {:bar :1} :fizz :2 :buzz [:3 "foo"]}
     {:1 1 :2 2 :3 3}
