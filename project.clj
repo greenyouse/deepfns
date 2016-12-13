@@ -1,4 +1,4 @@
-(defproject com.greenyouse/deepfns "0.1.4"
+(defproject com.greenyouse/deepfns "0.1.5"
   :description "Deeply nested fmap, fapply, and more!"
   :url "https://github.com/greenyouse/deepfns"
   :license {:name "Eclipse Public License"
