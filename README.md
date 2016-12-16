@@ -17,7 +17,10 @@ I also wrote an introductory blog post focusing on transitives and the
 current state of the library [here](https://edbabcock.com/deepfns.html).
 
 If you'd like some examples of how to use each function, check the cases
-in the test directory. Here's a basic overview of the main functions:
+in the test directory. There is also a [SQL and ElasticSearch library](https://github.com/greenyouse/dorali)
+I built that uses transitives.
+
+Here's a basic overview of the main functions:
 
 
 ### fmap
