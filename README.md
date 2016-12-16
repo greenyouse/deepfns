@@ -18,9 +18,7 @@ current state of the library [here](https://edbabcock.com/deepfns.html).
 
 If you'd like some examples of how to use each function, check the cases
 in the test directory. There is also a [SQL and ElasticSearch library](https://github.com/greenyouse/dorali)
-I built that uses transitives.
-
-Here's a basic overview of the main functions:
+I built that uses transitives. Here's a basic overview of the main functions:
 
 
 ### fmap
@@ -149,7 +147,7 @@ See how it applies the functions to the arguments and inserts the
 results?
 
 Here are a few things to note for transitive:
-- Using the variadic form will map transitive over the arguments and
+- Using the variadic form will map a transitive over the arguments and
   return a list of the results (see example 3).
 - Using normal Clojure functions instead of keywords will apply the
   function to each argument too (see second to last example).
